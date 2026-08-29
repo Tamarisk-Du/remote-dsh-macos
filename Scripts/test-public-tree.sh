@@ -73,6 +73,16 @@ git -C "$fixture" add tracked.txt
 expect_pass explicit-test-placeholder "$verifier" "$fixture"
 
 create_fixture
+printf '%s%s%s\n' 'Authorization: Bearer ' 'do-not-display' '.secret' > "$fixture/tracked.txt"
+git -C "$fixture" add tracked.txt
+expect_fail extended-dot-prefix "$verifier" "$fixture"
+
+create_fixture
+printf '%s%s%s\n' 'Authorization: Bearer ' 'do-not-display' '-extra' > "$fixture/tracked.txt"
+git -C "$fixture" add tracked.txt
+expect_fail extended-hyphen-prefix "$verifier" "$fixture"
+
+create_fixture
 ln -s tracked.txt "$fixture/link.txt"
 git -C "$fixture" add link.txt
 expect_fail tracked-symlink "$verifier" "$fixture"
