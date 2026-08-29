@@ -50,6 +50,7 @@ Run the behavioral, packaging, and privacy checks:
 ```bash
 swift run RemoteDSHTestRunner
 /bin/bash Scripts/test-public-tree.sh
+/bin/bash Scripts/test-public-history.sh
 /bin/bash Scripts/test-atomic-install.sh
 /bin/bash Scripts/test-build-app.sh
 /bin/bash Scripts/verify-public-tree.sh .

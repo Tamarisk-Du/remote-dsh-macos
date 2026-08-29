@@ -23,8 +23,12 @@ scanner_binary="$temporary_directory/PublicTreeScanner"
 denylist_path="$temporary_directory/denylist.txt"
 commits_path="$temporary_directory/commits.txt"
 objects_path="$temporary_directory/objects.txt"
+tree_entries_path="$temporary_directory/tree-entries.txt"
+historical_path_file="$temporary_directory/historical-path.txt"
 : > "$denylist_path"
+: > "$historical_path_file"
 chmod 600 "$denylist_path"
+chmod 600 "$historical_path_file"
 
 cleanup() {
   case "$temporary_directory" in
@@ -67,6 +71,7 @@ git -C "$repository_root" rev-list --objects --all > "$objects_path" || fail enu
 [[ -s "$objects_path" ]] || fail no-objects
 
 commit_count=0
+path_count=0
 while IFS= read -r commit || [[ -n "$commit" ]]; do
   [[ "$commit" =~ ^[0-9a-fA-F]+$ ]] || fail malformed-commit-id
   object_type="$(git -C "$repository_root" cat-file -t "$commit" 2>/dev/null)" || fail missing-commit
@@ -76,6 +81,15 @@ while IFS= read -r commit || [[ -n "$commit" ]]; do
   git -C "$repository_root" cat-file commit "$commit" > "$commit_file" || fail read-commit
   "$scanner_binary" "commit:$commit" "$commit_file" "$denylist_path"
   rm -f -- "$commit_file"
+
+  git -C "$repository_root" ls-tree -rz --full-tree "$commit" > "$tree_entries_path" || fail enumerate-tree
+  while IFS= read -r -d '' tree_entry; do
+    relative_path="${tree_entry#*$'\t'}"
+    [[ "$relative_path" != "$tree_entry" ]] || fail malformed-tree-entry
+    printf '%s' "$relative_path" > "$historical_path_file" || fail write-historical-path
+    "$scanner_binary" "path:$relative_path" "$historical_path_file" "$denylist_path"
+    path_count=$((path_count + 1))
+  done < "$tree_entries_path"
   commit_count=$((commit_count + 1))
 done < "$commits_path"
 
@@ -96,4 +110,5 @@ done < "$objects_path"
 
 [[ $commit_count -gt 0 ]] || fail no-scanned-commits
 [[ $blob_count -gt 0 ]] || fail no-scanned-blobs
-printf 'PUBLIC_HISTORY_PASS commits=%d blobs=%d\n' "$commit_count" "$blob_count"
+[[ $path_count -gt 0 ]] || fail no-scanned-paths
+printf 'PUBLIC_HISTORY_PASS commits=%d blobs=%d paths=%d\n' "$commit_count" "$blob_count" "$path_count"
