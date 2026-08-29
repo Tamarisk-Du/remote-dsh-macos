@@ -1,0 +1,10 @@
+.build/
+*.app/
+*.dmg
+.DS_Store
+*.log
+*.session
+*.workspace
+config.plist
+Resources/config.plist
+.remote-dsh-backups/
