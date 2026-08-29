@@ -1,11 +1,21 @@
 # Remote DSH for macOS
 
-![Release](https://img.shields.io/badge/release-v0.1.0-2563eb)
+<p align="center">
+  <a href="#features">Features</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#limitations">Limitations</a> ·
+  <a href="#中文">中文</a>
+</p>
+
+[![Release](https://img.shields.io/github/v/release/%54amarisk-%44u/remote-dsh-macos?display_name=tag&sort=semver&label=release&color=2563eb)](https://github.com/%54amarisk-%44u/remote-dsh-macos/releases/latest)
 ![macOS](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)
 ![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-22c55e)
 
 ### Use DeepSeek Harness with models running on a remote GPU server — from a native Mac app.
+
+<a id="中文"></a>
 
 ### 在原生 Mac App 中，让 DeepSeek Harness 使用运行于远程 GPU 服务器的模型。
 
@@ -28,6 +38,8 @@ does not require or inspect a particular accelerator.
 
 常见部署会使用远程 GPU 服务器，但本封装只要求远程模型服务能够通过用户的 SSH
 配置访问，不要求也不会检测某一种特定加速器。
+
+<a id="features"></a>
 
 ## Features / 功能
 
@@ -69,6 +81,8 @@ without taking ownership.
 App 负责协调 Mac 上的本地工作流，模型计算仍然留在远程服务器。如果 SSH 隧道或
 Harness 已经健康运行，它会直接连接，不会接管所有权。
 
+<a id="architecture"></a>
+
 ## How it works / 工作原理
 
 ```mermaid
@@ -99,6 +113,8 @@ forwarded to it.
 
 DeepSeek Harness 和选中的项目都留在 Mac 本地。远程服务器运行模型服务；已有的
 SSH alias 决定如何把本地端口转发到该服务。
+
+<a id="quick-start"></a>
 
 ## Quick Start / 快速开始
 
@@ -256,6 +272,8 @@ attaches to it and leaves it running on quit.
 For security reports, see [SECURITY.md](SECURITY.md).
 
 安全问题报告方式请参阅 [SECURITY.md](SECURITY.md)。
+
+<a id="limitations"></a>
 
 ## Limitations / 当前限制
 
