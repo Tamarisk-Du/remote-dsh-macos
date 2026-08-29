@@ -20,7 +20,8 @@ public struct SystemCoordinatorTiming: CoordinatorTiming, Sendable {
         sleeper = { duration in try await clock.sleep(for: duration) }
     }
 
-    init(
+    @_spi(RemoteDSHTesting)
+    public init(
         now: @escaping @Sendable () -> Duration,
         sleeper: @escaping @Sendable (Duration) async throws -> Void
     ) {

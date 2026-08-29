@@ -1,6 +1,7 @@
-import RemoteDSHCore
+import AppKit
 
-@main
-struct RemoteDSHApp {
-    static func main() {}
-}
+let application = NSApplication.shared
+let applicationDelegate = AppDelegate()
+application.delegate = applicationDelegate
+application.setActivationPolicy(.regular)
+application.run()

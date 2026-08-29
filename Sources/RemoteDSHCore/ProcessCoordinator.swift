@@ -29,7 +29,8 @@ public struct ShutdownReport: Equatable, Sendable {
     }
 }
 
-enum CoordinatorJoinOperation: Equatable, Sendable {
+@_spi(RemoteDSHTesting)
+public enum CoordinatorJoinOperation: Equatable, Sendable {
     case start
     case retry
     case shutdown
@@ -79,7 +80,8 @@ public final class ProcessCoordinator {
     private var retryInFlight = false
     private var retryWaiters: [CheckedContinuation<Void, Never>] = []
     private var shutdownWaiters: [CheckedContinuation<ShutdownReport, Never>] = []
-    var waiterEnrollmentObserver: (@MainActor @Sendable (CoordinatorJoinOperation) -> Void)?
+    @_spi(RemoteDSHTesting)
+    public var waiterEnrollmentObserver: (@MainActor @Sendable (CoordinatorJoinOperation) -> Void)?
 
     public init(
         endpoints: RuntimeEndpoints,

@@ -1,5 +1,5 @@
 import Testing
-@testable import RemoteDSHCore
+import RemoteDSHCore
 
 @Suite("App presentation policy")
 struct AppPresentationPolicyTests {

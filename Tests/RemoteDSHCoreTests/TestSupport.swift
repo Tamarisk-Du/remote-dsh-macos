@@ -1,6 +1,6 @@
 import Foundation
 import Network
-@testable import RemoteDSHCore
+import RemoteDSHCore
 
 struct WorkspacePathTestFixture: Sendable {
     let root: String

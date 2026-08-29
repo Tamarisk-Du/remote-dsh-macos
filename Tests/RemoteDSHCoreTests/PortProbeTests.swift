@@ -1,5 +1,5 @@
 import Testing
-@testable import RemoteDSHCore
+import RemoteDSHCore
 
 @Suite("Port probe")
 struct PortProbeTests {

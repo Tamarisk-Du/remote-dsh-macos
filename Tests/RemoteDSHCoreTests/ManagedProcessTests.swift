@@ -1,5 +1,5 @@
 import Testing
-@testable import RemoteDSHCore
+import RemoteDSHCore
 
 @Suite("Foundation process launcher", .serialized)
 struct ManagedProcessTests {

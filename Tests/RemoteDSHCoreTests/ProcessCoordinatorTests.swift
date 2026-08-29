@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import RemoteDSHCore
+@_spi(RemoteDSHTesting) import RemoteDSHCore
 
 @Suite("Process coordinator", .serialized)
 struct ProcessCoordinatorTests {

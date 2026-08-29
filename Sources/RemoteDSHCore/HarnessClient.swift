@@ -8,6 +8,25 @@ public struct HostDescription: Decodable, Equatable, Sendable {
     public let attachedSessions: Int
     public let home: String
     public let canOpenPath: Bool
+
+    @_spi(RemoteDSHTesting)
+    public init(
+        version: String,
+        cwd: String,
+        provider: String?,
+        model: String?,
+        attachedSessions: Int,
+        home: String,
+        canOpenPath: Bool
+    ) {
+        self.version = version
+        self.cwd = cwd
+        self.provider = provider
+        self.model = model
+        self.attachedSessions = attachedSessions
+        self.home = home
+        self.canOpenPath = canOpenPath
+    }
 }
 
 public struct WorkspaceView: Decodable, Equatable, Sendable {
@@ -17,11 +36,34 @@ public struct WorkspaceView: Decodable, Equatable, Sendable {
     public let sessionIds: [String]
     public let createdAt: String
     public let updatedAt: String
+
+    @_spi(RemoteDSHTesting)
+    public init(
+        workspaceId: String,
+        path: String,
+        title: String,
+        sessionIds: [String],
+        createdAt: String,
+        updatedAt: String
+    ) {
+        self.workspaceId = workspaceId
+        self.path = path
+        self.title = title
+        self.sessionIds = sessionIds
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
 }
 
 public struct WorkspaceCreateValue: Decodable, Equatable, Sendable {
     public let workspace: WorkspaceView
     public let created: Bool
+
+    @_spi(RemoteDSHTesting)
+    public init(workspace: WorkspaceView, created: Bool) {
+        self.workspace = workspace
+        self.created = created
+    }
 }
 
 public protocol HarnessAPI: Sendable {
