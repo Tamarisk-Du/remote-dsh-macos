@@ -142,7 +142,8 @@ The public repository contains:
 - `Scripts/build-app.sh` — destination-parameterized local build/install script.
 - `Scripts/verify-bundle.sh` — verifies an explicitly supplied bundle path.
 - `Scripts/verify-public-tree.sh` — fail-closed privacy and secret scanner.
-- `README.md` — English-first overview with concise Chinese usage section.
+- `README.md` — paragraph-level bilingual overview with each English passage
+  immediately followed by its Simplified Chinese translation.
 - `LICENSE` — MIT license for the public wrapper code.
 - `THIRD_PARTY_NOTICES.md` — identifies the upstream DeepSeek Harness MIT
   license and states that the v0.1 source repository does not embed its runtime.
