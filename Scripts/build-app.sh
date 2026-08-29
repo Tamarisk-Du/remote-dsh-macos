@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
+umask 077
 
 if [[ $# -ne 1 ]]; then
   printf 'BUILD_APP_FAIL rule=arguments\n' >&2
@@ -34,17 +35,23 @@ fi
 script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repository_root="$(cd "$script_directory/.." && pwd)"
 backups="$destination_parent/.remote-dsh-backups"
-candidate="$destination_parent/.Remote-DSH.candidate.$$.app"
-candidate_state=absent
+candidate=""
+candidate_identity=""
+candidate_state=unallocated
+
+candidate_is_original_directory() {
+  [[ -n "$candidate" && ! -L "$candidate" && -d "$candidate" ]] || return 1
+  [[ "$(/usr/bin/stat -f '%d:%i' "$candidate")" == "$candidate_identity" ]]
+}
 
 cleanup() {
   local original_status=$?
-  if [[ -e "$candidate" || -L "$candidate" ]]; then
+  if [[ -n "$candidate" && ( -e "$candidate" || -L "$candidate" ) ]]; then
     case "$candidate:$candidate_state" in
-      "$destination_parent"/.Remote-DSH.candidate.*.app:building)
+      "$destination_parent"/.Remote-DSH.candidate.*:building)
         rm -rf -- "$candidate"
         ;;
-      "$destination_parent"/.Remote-DSH.candidate.*.app:*)
+      "$destination_parent"/.Remote-DSH.candidate.*:*)
         printf 'BUILD_APP_RECOVERY candidate=%s state=%s\n' "$candidate" "$candidate_state" >&2
         ;;
       *)
@@ -66,10 +73,17 @@ else
   chmod 700 "$backups"
 fi
 
-if [[ -e "$candidate" || -L "$candidate" ]]; then
-  printf 'BUILD_APP_FAIL rule=candidate-collision\n' >&2
+candidate="$(/usr/bin/mktemp -d "$destination_parent/.Remote-DSH.candidate.XXXXXX")" || {
+  printf 'BUILD_APP_FAIL rule=create-candidate\n' >&2
+  exit 1
+}
+if [[ -L "$candidate" || ! -d "$candidate" ]]; then
+  printf 'BUILD_APP_FAIL rule=real-candidate-directory\n' >&2
   exit 1
 fi
+candidate_state=building
+chmod 700 "$candidate"
+candidate_identity="$(/usr/bin/stat -f '%d:%i' "$candidate")"
 
 cd "$repository_root"
 /usr/bin/swift build -c release --product RemoteDSHApp --arch arm64
@@ -80,8 +94,12 @@ if [[ -L "$release_executable" || ! -f "$release_executable" || ! -x "$release_e
   exit 1
 fi
 
-mkdir -p "$candidate/Contents/MacOS"
-candidate_state=building
+if ! candidate_is_original_directory; then
+  printf 'BUILD_APP_FAIL rule=candidate-replaced\n' >&2
+  exit 1
+fi
+mkdir -m 700 "$candidate/Contents"
+mkdir -m 700 "$candidate/Contents/MacOS"
 cp "$release_executable" "$candidate/Contents/MacOS/RemoteDSHApp"
 cp "$repository_root/Resources/Info.plist" "$candidate/Contents/Info.plist"
 chmod 755 "$candidate" "$candidate/Contents" "$candidate/Contents/MacOS"
@@ -91,6 +109,10 @@ chmod 644 "$candidate/Contents/Info.plist"
 /usr/bin/plutil -lint "$candidate/Contents/Info.plist"
 /usr/bin/codesign --force --sign - "$candidate"
 /bin/bash "$repository_root/Scripts/verify-bundle.sh" "$candidate"
+if ! candidate_is_original_directory; then
+  printf 'BUILD_APP_FAIL rule=candidate-replaced\n' >&2
+  exit 1
+fi
 candidate_state=verified
 
 /usr/bin/swift "$repository_root/Scripts/AtomicBundleInstall.swift" \

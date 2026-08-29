@@ -51,4 +51,48 @@ mkdir -p "$real_destination"
 ln -s "$real_destination" "$symlink_destination"
 expect_rejection symlink-destination 'BUILD_APP_FAIL rule=symlink-destination' "$symlink_destination"
 
+victim="$temporary_root/candidate-victim"
+sentinel="$victim/sentinel.txt"
+precreator="$temporary_root/precreate-predictable-candidate.sh"
+candidate_record="$temporary_root/precreated-candidate.txt"
+race_output="$temporary_root/precreated-candidate.output"
+mkdir -m 700 "$victim"
+printf 'untouched\n' > "$sentinel"
+printf '%s\n' \
+  '#!/bin/bash' \
+  'set -euo pipefail' \
+  'destination_parent="$1"' \
+  'victim="$2"' \
+  'builder="$3"' \
+  'destination="$4"' \
+  'record="$5"' \
+  'candidate="$destination_parent/.Remote-DSH.candidate.$$.app"' \
+  'ln -s "$victim" "$candidate"' \
+  'printf "%s\n" "$candidate" > "$record"' \
+  'exec env DEVELOPER_DIR="$destination_parent/missing-developer-directory" /bin/bash "$builder" "$destination"' \
+  > "$precreator"
+chmod 700 "$precreator"
+
+race_status=0
+/bin/bash "$precreator" \
+  "$temporary_root" "$victim" "$builder" "$temporary_root/Race.app" "$candidate_record" \
+  > "$race_output" 2>&1 || race_status=$?
+if [[ $race_status -eq 0 ]]; then
+  printf 'BUILD_APP_TEST_FAIL rule=unexpected-build-success\n' >&2
+  exit 1
+fi
+if grep -Fq 'BUILD_APP_FAIL rule=candidate-collision' "$race_output"; then
+  printf 'BUILD_APP_TEST_FAIL rule=predictable-candidate-selected\n' >&2
+  exit 1
+fi
+precreated_candidate="$(<"$candidate_record")"
+if [[ ! -L "$precreated_candidate" ]]; then
+  printf 'BUILD_APP_TEST_FAIL rule=precreated-symlink-replaced\n' >&2
+  exit 1
+fi
+if [[ "$(<"$sentinel")" != untouched || -e "$victim/Contents" ]]; then
+  printf 'BUILD_APP_TEST_FAIL rule=precreated-symlink-followed\n' >&2
+  exit 1
+fi
+
 printf 'BUILD_APP_TEST_PASS\n'

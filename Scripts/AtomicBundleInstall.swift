@@ -10,7 +10,7 @@ private func standardizedAbsolutePath(_ rawPath: String, role: String) -> String
     guard rawPath.hasPrefix("/") else {
         fail("rule=absolute-path role=\(role)")
     }
-    return URL(fileURLWithPath: rawPath).standardizedFileURL.path
+    return URL(fileURLWithPath: rawPath).standardized.path
 }
 
 private func fileStatus(_ path: String) -> stat? {

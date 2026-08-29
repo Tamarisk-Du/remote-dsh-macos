@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
+umask 077
 
 if [[ $# -ne 1 ]]; then
   printf 'PUBLIC_TREE_FAIL rule=arguments\n' >&2
@@ -18,6 +19,12 @@ script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 temporary_directory="$(mktemp -d)"
 scanner_binary="$temporary_directory/PublicTreeScanner"
 denylist_path="$temporary_directory/denylist.txt"
+tracked_path_file="$temporary_directory/tracked-path.txt"
+tracked_files_path="$temporary_directory/tracked-files.bin"
+: > "$denylist_path"
+: > "$tracked_path_file"
+: > "$tracked_files_path"
+chmod 600 "$denylist_path" "$tracked_path_file" "$tracked_files_path"
 
 cleanup() {
   rm -rf "$temporary_directory"
@@ -52,13 +59,23 @@ fi
 
 swiftc "$script_directory/PublicTreeScanner.swift" -o "$scanner_binary"
 
+if ! git -C "$repository_root" ls-files -z > "$tracked_files_path"; then
+  printf 'PUBLIC_TREE_FAIL rule=enumerate-tracked-files\n' >&2
+  exit 1
+fi
+
+entry_index=0
 while IFS= read -r -d '' relative_path; do
+  diagnostic_label="tracked-entry:$entry_index"
+  printf '%s' "$relative_path" > "$tracked_path_file"
+  "$scanner_binary" "$diagnostic_label" "$tracked_path_file" "$denylist_path" path
   absolute_path="$repository_root/$relative_path"
   if [[ -L "$absolute_path" || ! -f "$absolute_path" || ! -r "$absolute_path" ]]; then
-    printf 'PUBLIC_TREE_FAIL entry=%q\n' "$relative_path" >&2
+    printf 'PUBLIC_TREE_FAIL rule=tracked-entry entry=%s\n' "$diagnostic_label" >&2
     exit 1
   fi
-  "$scanner_binary" "$relative_path" "$absolute_path" "$denylist_path"
-done < <(git -C "$repository_root" ls-files -z)
+  "$scanner_binary" "$diagnostic_label" "$absolute_path" "$denylist_path"
+  entry_index=$((entry_index + 1))
+done < "$tracked_files_path"
 
 printf 'PUBLIC_TREE_PASS\n'

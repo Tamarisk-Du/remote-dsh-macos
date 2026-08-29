@@ -253,6 +253,62 @@ struct ProcessCoordinatorTests {
         #expect(report.timedOutPIDs.isEmpty)
     }
 
+    @Test("Retry after a foreign Harness reuses only the same healthy owned tunnel")
+    @MainActor
+    func retryAfterForeignHarnessReusesOwnedTunnel() async throws {
+        let fixture = CoordinatorFixture(
+            tunnelSequence: [false, true, true],
+            harnessSequence: [.foreign, .foreign, .free, .ready]
+        )
+
+        let firstFailure = await capturedStartFailure(fixture.coordinator)
+        #expect(firstFailure == .foreignHarness)
+        #expect(fixture.coordinator.ownsTunnel)
+        #expect(fixture.coordinator.ownsHarness == false)
+
+        try await fixture.coordinator.start()
+
+        #expect(fixture.launcher.commands == [fixture.tunnelCommand, fixture.harnessCommand])
+        #expect(fixture.tunnelHandle.terminateCount == 0)
+        #expect(fixture.tunnelHandle.isRunning)
+        #expect(await fixture.portProbe.tunnelProbeCount == 3)
+        #expect(fixture.coordinator.ownsTunnel)
+        #expect(fixture.coordinator.ownsHarness)
+        #expect(fixture.coordinator.status == .ready)
+        _ = await fixture.coordinator.shutdown()
+    }
+
+    @Test("Retry after an immediate Harness launch failure retains the healthy owned tunnel")
+    @MainActor
+    func retryAfterImmediateHarnessLaunchFailureReusesOwnedTunnel() async throws {
+        let fixture = CoordinatorFixture(
+            tunnelSequence: [false, true, true],
+            harnessSequence: [.free, .free, .ready],
+            launchFailures: [nil, TestLaunchError.expected, nil]
+        )
+
+        let firstFailure = await capturedStartFailure(fixture.coordinator)
+        guard case .harnessLaunchFailed = firstFailure else {
+            Issue.record("expected the initial Harness launch to fail")
+            return
+        }
+        #expect(fixture.coordinator.ownsTunnel)
+        #expect(fixture.coordinator.ownsHarness == false)
+
+        try await fixture.coordinator.start()
+
+        #expect(fixture.launcher.commands == [
+            fixture.tunnelCommand, fixture.harnessCommand, fixture.harnessCommand
+        ])
+        #expect(fixture.tunnelHandle.terminateCount == 0)
+        #expect(fixture.tunnelHandle.isRunning)
+        #expect(await fixture.portProbe.tunnelProbeCount == 3)
+        #expect(fixture.coordinator.ownsTunnel)
+        #expect(fixture.coordinator.ownsHarness)
+        #expect(fixture.coordinator.status == .ready)
+        _ = await fixture.coordinator.shutdown()
+    }
+
     @Test("existing tunnel plus free Harness starts only Harness")
     @MainActor
     func existingTunnelStartsOnlyHarness() async throws {

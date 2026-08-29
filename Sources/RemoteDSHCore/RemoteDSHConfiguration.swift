@@ -124,10 +124,46 @@ public struct RemoteDSHConfigurationLoader {
     }
 
     private func decodePayload(at url: URL) throws -> Payload {
+        let data: Data
         do {
-            return try PropertyListDecoder().decode(Payload.self, from: Data(contentsOf: url))
+            data = try Data(contentsOf: url)
         } catch {
             throw RemoteDSHConfigurationError.invalidPlist
+        }
+
+        do {
+            return try PropertyListDecoder().decode(Payload.self, from: data)
+        } catch let error as DecodingError {
+            throw configurationError(for: error)
+        } catch {
+            throw RemoteDSHConfigurationError.invalidPlist
+        }
+    }
+
+    private func configurationError(for error: DecodingError) -> RemoteDSHConfigurationError {
+        let field: String?
+        switch error {
+        case let .keyNotFound(key, _):
+            field = key.stringValue
+        case let .typeMismatch(_, context),
+             let .valueNotFound(_, context),
+             let .dataCorrupted(context):
+            field = context.codingPath.last?.stringValue
+        @unknown default:
+            field = nil
+        }
+
+        switch field {
+        case "sshAlias":
+            return .invalidSSHAlias
+        case "sshLocalPort":
+            return .invalidSSHLocalPort
+        case "harnessPort":
+            return .invalidHarnessPort
+        case "harnessLauncherPath":
+            return .invalidLauncherPath
+        default:
+            return .invalidPlist
         }
     }
 

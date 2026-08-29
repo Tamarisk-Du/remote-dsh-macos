@@ -6,9 +6,21 @@ script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 installer_source="$script_directory/AtomicBundleInstall.swift"
 temporary_root="$(mktemp -d)"
 installer="$temporary_root/AtomicBundleInstall"
+canonicalization_root=""
 
 cleanup() {
   chmod 700 "$temporary_root/Applications/.remote-dsh-backups" 2>/dev/null || true
+  if [[ -n "$canonicalization_root" ]]; then
+    case "$canonicalization_root" in
+      /private/tmp/remote-dsh-atomic-alias.*)
+        rm -rf -- "$canonicalization_root"
+        ;;
+      *)
+        printf 'ATOMIC_INSTALL_TEST_FAIL rule=unsafe-alias-cleanup\n' >&2
+        return 1
+        ;;
+    esac
+  fi
   case "$temporary_root" in
     "${TMPDIR%/}"/*|/tmp/*|/private/tmp/*|/var/folders/*)
       rm -rf -- "$temporary_root"
@@ -70,6 +82,19 @@ printf 'keep backup\n' > "$backups/unrelated-backup/sentinel.txt"
 [[ "$(<"$backups/unrelated-backup/sentinel.txt")" == 'keep backup' ]]
 old_bundle="$(find "$backups" -mindepth 1 -maxdepth 1 -type d ! -name unrelated-backup -print -quit)"
 [[ -n "$old_bundle" && "$(<"$old_bundle/Contents/marker.txt")" == new-first ]]
+
+canonicalization_root="$(mktemp -d /private/tmp/remote-dsh-atomic-alias.XXXXXX)"
+alias_applications="$canonicalization_root/Applications"
+alias_backups="$alias_applications/.remote-dsh-backups"
+alias_target="$alias_applications/Alias Destination.app"
+alias_candidate="$alias_applications/.Remote-DSH.candidate.alias-test"
+mkdir -p "$alias_backups" "$alias_candidate/Contents"
+chmod 700 "$alias_backups"
+printf 'alias-candidate\n' > "$alias_candidate/Contents/marker.txt"
+
+"$installer" "$alias_candidate" "$alias_target" "$alias_backups"
+[[ "$(<"$alias_target/Contents/marker.txt")" == alias-candidate ]]
+[[ ! -e "$alias_candidate" && ! -L "$alias_candidate" ]]
 
 target_snapshot="$temporary_root/target-snapshot"
 cp -R "$target" "$target_snapshot"

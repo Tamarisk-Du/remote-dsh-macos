@@ -36,6 +36,32 @@ struct RemoteDSHConfigurationTests {
         }
     }
 
+    @Test(arguments: RequiredConfigurationField.allCases)
+    func missingRequiredFieldsIdentifyTheirField(field: RequiredConfigurationField) throws {
+        let fixture = try ConfigurationFixture()
+
+        do {
+            _ = try fixture.load(removing: [field.rawValue])
+            Issue.record("Expected rejection for missing \(field.rawValue)")
+        } catch let error as RemoteDSHConfigurationError {
+            #expect(error == field.expectedError)
+            #expect(error.fieldName == field.rawValue)
+        }
+    }
+
+    @Test(arguments: RequiredConfigurationField.allCases)
+    func incorrectlyTypedRequiredFieldsIdentifyTheirField(field: RequiredConfigurationField) throws {
+        let fixture = try ConfigurationFixture()
+
+        do {
+            _ = try fixture.load([field.rawValue: field.invalidValue])
+            Issue.record("Expected rejection for invalid \(field.rawValue)")
+        } catch let error as RemoteDSHConfigurationError {
+            #expect(error == field.expectedError)
+            #expect(error.fieldName == field.rawValue)
+        }
+    }
+
     @Test(arguments: ["", "-host", "host name", String(repeating: "a", count: 129)])
     func invalidAliasesAreRejected(alias: String) throws {
         let fixture = try ConfigurationFixture()
@@ -139,6 +165,35 @@ struct RemoteDSHConfigurationTests {
     }
 }
 
+enum RequiredConfigurationField: String, CaseIterable, Sendable {
+    case sshAlias
+    case sshLocalPort
+    case harnessPort
+    case harnessLauncherPath
+
+    var expectedError: RemoteDSHConfigurationError {
+        switch self {
+        case .sshAlias:
+            .invalidSSHAlias
+        case .sshLocalPort:
+            .invalidSSHLocalPort
+        case .harnessPort:
+            .invalidHarnessPort
+        case .harnessLauncherPath:
+            .invalidLauncherPath
+        }
+    }
+
+    var invalidValue: Any {
+        switch self {
+        case .sshAlias, .harnessLauncherPath:
+            17
+        case .sshLocalPort, .harnessPort:
+            "not-an-integer"
+        }
+    }
+}
+
 private struct ConfigurationFixture {
     let root: URL
     let home: URL
@@ -162,7 +217,10 @@ private struct ConfigurationFixture {
         root.appending(path: "config.plist")
     }
 
-    func load(_ overrides: [String: Any] = [:]) throws -> RemoteDSHConfiguration {
+    func load(
+        _ overrides: [String: Any] = [:],
+        removing removedKeys: Set<String> = []
+    ) throws -> RemoteDSHConfiguration {
         var plist: [String: Any] = [
             "sshAlias": "model-host",
             "sshLocalPort": 18080,
@@ -170,6 +228,7 @@ private struct ConfigurationFixture {
             "harnessLauncherPath": "~/.local/bin/remote-dsh-launcher"
         ]
         overrides.forEach { plist[$0.key] = $0.value }
+        removedKeys.forEach { plist.removeValue(forKey: $0) }
         let data = try PropertyListSerialization.data(
             fromPropertyList: plist,
             format: .xml,

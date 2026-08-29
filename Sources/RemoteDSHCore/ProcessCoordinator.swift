@@ -181,6 +181,7 @@ public final class ProcessCoordinator {
         case .ready:
             break
         case .foreign:
+            markHarnessRetryPendingForReusableOwnedTunnel()
             try fail(.foreignHarness, operation: operation)
         case .free:
             try await startHarness(operation: operation, deadline: harnessDeadline)
@@ -446,6 +447,7 @@ public final class ProcessCoordinator {
             throw failure
         } catch {
             try ensureCurrent(operation)
+            markHarnessRetryPendingForReusableOwnedTunnel()
             try fail(.harnessLaunchFailed(sanitized(error)), operation: operation)
         }
     }
@@ -674,6 +676,14 @@ public final class ProcessCoordinator {
     private func pruneExitedChildren() {
         if let child = ownedHarness, child.handle.isRunning == false { ownedHarness = nil }
         if let child = ownedTunnel, child.handle.isRunning == false { ownedTunnel = nil }
+    }
+
+    private func markHarnessRetryPendingForReusableOwnedTunnel() {
+        guard ownedHarness == nil,
+              let tunnel = ownedTunnel,
+              tunnel.handle.isRunning,
+              tunnel.replacementBlocked == false else { return }
+        harnessRestartPending = true
     }
 
     private func fail(_ failure: CoordinatorFailure, operation: UInt64) throws -> Never {

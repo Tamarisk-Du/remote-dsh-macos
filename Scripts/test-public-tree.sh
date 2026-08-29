@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
+umask 077
 
 script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 verifier="$script_directory/verify-public-tree.sh"
@@ -59,8 +60,59 @@ marker_prefix='identity-marker-'
 marker_suffix='7f1e2c'
 mv "$fixture/tracked.txt" "$fixture/${marker_prefix}${marker_suffix}-notes.md"
 git -C "$fixture" add -A
-expect_fail personal-identifier-filename env REMOTE_DSH_ADDITIONAL_DENYLIST="$denylist" \
-  "$verifier" "$fixture"
+filename_output="$temporary_root/personal-identifier-filename.output"
+filename_status=0
+REMOTE_DSH_ADDITIONAL_DENYLIST="$denylist" \
+  "$verifier" "$fixture" > "$filename_output" 2>&1 || filename_status=$?
+if [[ $filename_status -eq 0 ]]; then
+  printf 'EXPECTED_FAILURE_MISSING personal-identifier-filename\n' >&2
+  exit 1
+fi
+if ! grep -Fq 'PUBLIC_TREE_FAIL rule=denylist' "$filename_output"; then
+  printf 'PUBLIC_TREE_TEST_FAIL rule=unexpected-filename-output\n' >&2
+  exit 1
+fi
+if grep -Fq "${marker_prefix}${marker_suffix}" "$filename_output"; then
+  printf 'PUBLIC_TREE_TEST_FAIL rule=tracked-filename-disclosed\n' >&2
+  exit 1
+fi
+
+create_fixture
+real_git="$(command -v git)"
+fake_git_directory="$temporary_root/fake-git"
+fake_git="$fake_git_directory/git"
+mkdir -m 700 "$fake_git_directory"
+printf '%s\n' \
+  '#!/bin/bash' \
+  'set -eu' \
+  'previous=' \
+  'for argument in "$@"; do' \
+  '  if [[ "$previous" == ls-files && "$argument" == -z && "${REMOTE_DSH_TEST_FAIL_LS_FILES:-}" == 1 ]]; then' \
+  "    printf 'tracked.txt\\0'" \
+  '    exit 73' \
+  '  fi' \
+  '  previous="$argument"' \
+  'done' \
+  'exec "$REMOTE_DSH_TEST_REAL_GIT" "$@"' > "$fake_git"
+chmod 700 "$fake_git"
+enumeration_output="$temporary_root/enumeration-failure.output"
+enumeration_status=0
+PATH="$fake_git_directory:$PATH" \
+REMOTE_DSH_TEST_REAL_GIT="$real_git" \
+REMOTE_DSH_TEST_FAIL_LS_FILES=1 \
+  "$verifier" "$fixture" > "$enumeration_output" 2>&1 || enumeration_status=$?
+if [[ $enumeration_status -eq 0 ]]; then
+  printf 'PUBLIC_TREE_TEST_FAIL rule=enumeration-failure-accepted\n' >&2
+  exit 1
+fi
+if ! grep -Fxq 'PUBLIC_TREE_FAIL rule=enumerate-tracked-files' "$enumeration_output"; then
+  printf 'PUBLIC_TREE_TEST_FAIL rule=unexpected-enumeration-output\n' >&2
+  exit 1
+fi
+if grep -Fq 'PUBLIC_TREE_PASS' "$enumeration_output"; then
+  printf 'PUBLIC_TREE_TEST_FAIL rule=enumeration-failure-reported-pass\n' >&2
+  exit 1
+fi
 
 create_fixture
 printf '%s%s\n' '-----BEGIN ' 'PRIVATE KEY-----' > "$fixture/tracked.txt"

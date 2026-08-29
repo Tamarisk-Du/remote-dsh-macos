@@ -79,37 +79,61 @@ while IFS= read -r commit || [[ -n "$commit" ]]; do
   commit_file="$(mktemp "$temporary_directory/commit.XXXXXX")" || fail commit-temp-file
   chmod 600 "$commit_file"
   git -C "$repository_root" cat-file commit "$commit" > "$commit_file" || fail read-commit
-  "$scanner_binary" "commit:$commit" "$commit_file" "$denylist_path"
+  "$scanner_binary" "reachable-commit:$commit_count" "$commit_file" "$denylist_path"
   rm -f -- "$commit_file"
-
-  git -C "$repository_root" ls-tree -rz --full-tree "$commit" > "$tree_entries_path" || fail enumerate-tree
-  while IFS= read -r -d '' tree_entry; do
-    relative_path="${tree_entry#*$'\t'}"
-    [[ "$relative_path" != "$tree_entry" ]] || fail malformed-tree-entry
-    printf '%s' "$relative_path" > "$historical_path_file" || fail write-historical-path
-    diagnostic_label="historical-path:$commit:$path_count"
-    "$scanner_binary" "$diagnostic_label" "$historical_path_file" "$denylist_path" path
-    path_count=$((path_count + 1))
-  done < "$tree_entries_path"
   commit_count=$((commit_count + 1))
 done < "$commits_path"
 
 blob_count=0
+tag_count=0
+tree_count=0
+object_count=0
 while IFS= read -r object_line || [[ -n "$object_line" ]]; do
   object_id="${object_line%% *}"
   [[ "$object_id" =~ ^[0-9a-fA-F]+$ ]] || fail malformed-object-id
   object_type="$(git -C "$repository_root" cat-file -t "$object_id" 2>/dev/null)" || fail missing-object
-  if [[ "$object_type" == blob ]]; then
-    blob_file="$(mktemp "$temporary_directory/blob.XXXXXX")" || fail blob-temp-file
-    chmod 600 "$blob_file"
-    git -C "$repository_root" cat-file blob "$object_id" > "$blob_file" || fail read-blob
-    "$scanner_binary" "$object_id" "$blob_file" "$denylist_path"
-    rm -f -- "$blob_file"
-    blob_count=$((blob_count + 1))
-  fi
+  case "$object_type" in
+    blob)
+      blob_file="$(mktemp "$temporary_directory/blob.XXXXXX")" || fail blob-temp-file
+      chmod 600 "$blob_file"
+      git -C "$repository_root" cat-file blob "$object_id" > "$blob_file" 2>/dev/null || fail read-blob
+      "$scanner_binary" "reachable-blob:$blob_count" "$blob_file" "$denylist_path"
+      rm -f -- "$blob_file"
+      blob_count=$((blob_count + 1))
+      ;;
+    commit)
+      ;;
+    tree)
+      git -C "$repository_root" ls-tree -rz --full-tree "$object_id" > "$tree_entries_path" 2>/dev/null \
+        || fail enumerate-tree
+      while IFS= read -r -d '' tree_entry; do
+        relative_path="${tree_entry#*$'\t'}"
+        [[ "$relative_path" != "$tree_entry" ]] || fail malformed-tree-entry
+        printf '%s' "$relative_path" > "$historical_path_file" || fail write-historical-path
+        "$scanner_binary" "historical-path:$path_count" "$historical_path_file" "$denylist_path" path
+        path_count=$((path_count + 1))
+      done < "$tree_entries_path"
+      tree_count=$((tree_count + 1))
+      ;;
+    tag)
+      tag_file="$(mktemp "$temporary_directory/tag.XXXXXX")" || fail tag-temp-file
+      chmod 600 "$tag_file"
+      git -C "$repository_root" cat-file tag "$object_id" > "$tag_file" 2>/dev/null || fail read-tag
+      "$scanner_binary" "reachable-tag:$tag_count" "$tag_file" "$denylist_path"
+      rm -f -- "$tag_file"
+      tag_count=$((tag_count + 1))
+      ;;
+    *)
+      fail unsupported-object-type
+      ;;
+  esac
+  object_count=$((object_count + 1))
 done < "$objects_path"
 
 [[ $commit_count -gt 0 ]] || fail no-scanned-commits
 [[ $blob_count -gt 0 ]] || fail no-scanned-blobs
+[[ $tree_count -gt 0 ]] || fail no-scanned-trees
 [[ $path_count -gt 0 ]] || fail no-scanned-paths
-printf 'PUBLIC_HISTORY_PASS commits=%d blobs=%d paths=%d\n' "$commit_count" "$blob_count" "$path_count"
+[[ $object_count -gt 0 ]] || fail no-scanned-objects
+printf 'PUBLIC_HISTORY_PASS commits=%d blobs=%d trees=%d tags=%d paths=%d objects=%d\n' \
+  "$commit_count" "$blob_count" "$tree_count" "$tag_count" "$path_count" "$object_count"
