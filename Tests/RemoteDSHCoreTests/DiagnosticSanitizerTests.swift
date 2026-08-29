@@ -3,6 +3,14 @@ import Testing
 
 @Suite("DiagnosticSanitizerTests")
 struct DiagnosticSanitizerTests {
+    @Test("prefixed authorization assignments are fully redacted")
+    func prefixedAuthorizationAssignmentIsRedacted() {
+        let output = DiagnosticSanitizer.clean("SERVICE_AUTHORIZATION=omega")
+
+        #expect(output == "SERVICE_AUTHORIZATION=[REDACTED]")
+        #expect(output.contains("omega") == false)
+    }
+
     @Test("authorization schemes and credentials are fully redacted")
     func authorizationSchemeAndCredentialAreRedacted() {
         let encodedCredential = "c2Vj" + "cmV0"

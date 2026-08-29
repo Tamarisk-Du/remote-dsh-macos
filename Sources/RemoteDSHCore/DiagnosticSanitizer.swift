@@ -6,7 +6,9 @@ public enum DiagnosticSanitizer {
         pattern: #"(?i)\b((?:[A-Z][A-Z0-9_]*_)?(?:API_KEY|TOKEN|PASSWORD|COOKIE))\s*[:=]\s*(?:\"[^\"]*\"|'[^']*'|[^\s,;]+)"#
     )
     private static let authorizationValues = try! NSRegularExpression(
-        pattern: #"(?im)\b("# + "Author" + #"ization\s*[:=]\s*)[^\r\n]+"#
+        pattern: #"(?im)\b((?:[A-Z][A-Z0-9_]*_)?"#
+            + "Author"
+            + #"ization\s*[:=]\s*)[^\r\n]+"#
     )
 
     public static func clean(_ diagnostic: String) -> String {
