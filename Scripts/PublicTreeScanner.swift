@@ -25,7 +25,7 @@ func matches(_ pattern: String, in text: String) -> Bool {
 }
 
 let arguments = CommandLine.arguments
-guard arguments.count == 4 else {
+guard arguments.count == 4 || (arguments.count == 5 && arguments[4] == "path") else {
     fputs("PUBLIC_TREE_FAIL rule=arguments\n", stderr)
     exit(2)
 }
@@ -33,6 +33,7 @@ guard arguments.count == 4 else {
 let displayPath = arguments[1]
 let contentPath = arguments[2]
 let denylistPath = arguments[3]
+let contentIsPath = arguments.count == 5
 
 do {
     let data = try Data(contentsOf: URL(fileURLWithPath: contentPath), options: .mappedIfSafe)
@@ -57,7 +58,9 @@ do {
         "." + "session",
         "." + "workspace"
     ]
-    for component in privateArtifactComponents where displayPath.localizedCaseInsensitiveContains(component) {
+    for component in privateArtifactComponents
+    where displayPath.localizedCaseInsensitiveContains(component)
+        || (contentIsPath && text.localizedCaseInsensitiveContains(component)) {
         throw ScanError.patternMatch("private-artifact", displayPath)
     }
 

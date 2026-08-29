@@ -87,7 +87,8 @@ while IFS= read -r commit || [[ -n "$commit" ]]; do
     relative_path="${tree_entry#*$'\t'}"
     [[ "$relative_path" != "$tree_entry" ]] || fail malformed-tree-entry
     printf '%s' "$relative_path" > "$historical_path_file" || fail write-historical-path
-    "$scanner_binary" "path:$relative_path" "$historical_path_file" "$denylist_path"
+    diagnostic_label="historical-path:$commit:$path_count"
+    "$scanner_binary" "$diagnostic_label" "$historical_path_file" "$denylist_path" path
     path_count=$((path_count + 1))
   done < "$tree_entries_path"
   commit_count=$((commit_count + 1))

@@ -58,7 +58,10 @@ if [[ $status -eq 0 ]]; then
 fi
 if ! grep -Fq 'PUBLIC_TREE_FAIL rule=denylist' "$output"; then
   printf 'PUBLIC_HISTORY_TEST_FAIL rule=unexpected-verifier-output\n' >&2
-  cat "$output" >&2
+  exit 1
+fi
+if grep -Fq "$marker" "$output"; then
+  printf 'PUBLIC_HISTORY_TEST_FAIL rule=historical-path-disclosed\n' >&2
   exit 1
 fi
 
