@@ -2,6 +2,11 @@
 
 [English](README.md) | 简体中文
 
+![Release](https://img.shields.io/badge/release-v0.1.0-2563eb)
+![macOS](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-22c55e)
+
 ### 在原生 Mac App 中，让 DeepSeek Harness 使用运行于远程 GPU 服务器的模型。
 
 **远程服务器负责运行模型，Mac 获得原生工作流。**
@@ -190,8 +195,7 @@ Remote DSH 不会按进程名批量终止进程。它只保存自己启动的 SS
 - [x] SSH 与 Harness 自动启动或连接生命周期
 - [x] 原生本地项目选择器
 - [x] 精确子进程所有权与安全退出
-- [ ] 在中性环境中录制隐私安全的演示素材
-- [ ] 第一个仅提供源码的 GitHub Release
+- [x] 第一个仅提供源码的 GitHub Release（`v0.1.0`）
 
 只有在签名、公证和发布流程能够经过验证后，才会评估未来的分发工作。这些内容是
 方向，不是交付承诺。

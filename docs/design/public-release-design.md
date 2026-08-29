@@ -162,9 +162,13 @@ an arm64 release binary, assembles a candidate bundle, verifies it, and installs
 only that exact destination. It may use the current user’s home at runtime but
 must not contain a literal username or fixed private directory.
 
-The public v0.1 deliverable is source-only. An ad-hoc-signed local bundle may be
-built for verification, but no downloadable bundle, DMG, Homebrew cask, GitHub
-Release, Developer ID claim, or notarization claim is included.
+The public v0.1 deliverable is source-only. The initial repository-preparation
+phase did not create any external release. After external publication was
+separately approved, `v0.1.0` may be published as a Git tag and GitHub Release
+containing release notes and GitHub-generated source archives only. An
+ad-hoc-signed local bundle may be built for personal verification, but no App
+bundle, DMG, Homebrew cask, updater, Developer ID claim, or notarization claim
+is included in the public release.
 
 ## Documentation Requirements
 

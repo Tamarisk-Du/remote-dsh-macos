@@ -2,6 +2,11 @@
 
 English | [简体中文](README.zh-CN.md)
 
+![Release](https://img.shields.io/badge/release-v0.1.0-2563eb)
+![macOS](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-22c55e)
+
 ### Use DeepSeek Harness with models running on a remote GPU server — from a native Mac app.
 
 **Your remote server runs the model. Your Mac gets the native workflow.**
@@ -204,8 +209,7 @@ For security reports, see [SECURITY.md](SECURITY.md).
 - [x] Automatic SSH and Harness start-or-attach lifecycle
 - [x] Native local-project picker
 - [x] Exact child-process ownership and safe shutdown
-- [ ] Privacy-safe demo assets recorded in a neutral environment
-- [ ] First source-only GitHub release
+- [x] First source-only GitHub release (`v0.1.0`)
 
 Future distribution work will be evaluated only after the signing, notarization,
 and release pipeline can be verified. These items are directions, not delivery
