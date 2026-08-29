@@ -55,6 +55,14 @@ expect_fail personal-identifier env REMOTE_DSH_ADDITIONAL_DENYLIST="$denylist" \
   "$verifier" "$fixture"
 
 create_fixture
+marker_prefix='identity-marker-'
+marker_suffix='7f1e2c'
+mv "$fixture/tracked.txt" "$fixture/${marker_prefix}${marker_suffix}-notes.md"
+git -C "$fixture" add -A
+expect_fail personal-identifier-filename env REMOTE_DSH_ADDITIONAL_DENYLIST="$denylist" \
+  "$verifier" "$fixture"
+
+create_fixture
 printf '%s%s\n' '-----BEGIN ' 'PRIVATE KEY-----' > "$fixture/tracked.txt"
 git -C "$fixture" add tracked.txt
 expect_fail private-key "$verifier" "$fixture"

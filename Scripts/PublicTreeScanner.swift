@@ -43,8 +43,10 @@ do {
     let denylist = try String(contentsOfFile: denylistPath, encoding: .utf8)
         .split(whereSeparator: \.isNewline)
         .map(String.init)
-    for value in denylist where !value.isEmpty && text.localizedCaseInsensitiveContains(value) {
-        throw ScanError.denylistMatch(displayPath)
+    for value in denylist where !value.isEmpty {
+        if text.localizedCaseInsensitiveContains(value) || displayPath.localizedCaseInsensitiveContains(value) {
+            throw ScanError.denylistMatch(displayPath)
+        }
     }
 
     let privateArtifactComponents = [
