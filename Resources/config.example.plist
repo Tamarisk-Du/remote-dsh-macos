@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>sshAlias</key>
+    <string>model-host</string>
+    <key>sshLocalPort</key>
+    <integer>18080</integer>
+    <key>harnessPort</key>
+    <integer>3080</integer>
+    <key>harnessLauncherPath</key>
+    <string>~/.local/bin/remote-dsh-launcher</string>
+    <key>displayModelName</key>
+    <string>Remote Model</string>
+</dict>
+</plist>

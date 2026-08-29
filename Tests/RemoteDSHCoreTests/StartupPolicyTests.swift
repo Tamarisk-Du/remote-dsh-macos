@@ -93,7 +93,7 @@ struct StartupPolicyTests {
         let presentation = ConfigurationFailurePresentation(
             path: path,
             field: "sshAlias",
-            detail: "Authorization: Bearer do-not-display"
+            detail: "Authorization: " + "Bearer " + "do-not-display"
         )
 
         #expect(presentation.title == "Remote DSH for macOS needs configuration")

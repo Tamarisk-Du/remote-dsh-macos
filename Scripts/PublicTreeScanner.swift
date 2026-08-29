@@ -63,7 +63,7 @@ do {
 
     let absoluteHomePath = #"/(?:Users|home)/[[:alnum:]_.-]+"#
     let credentialAssignment = #"(?i)\b(?:api[_-]?key|password|secret|token|credential)\s*[:=]\s*(?!example(?:[-_a-z0-9]*)?\b)(?!<[^>]*>)[\"']?[A-Za-z0-9._~+/=-]{8,}"#
-    let bearerAuthorization = #"(?i)\b(?:authorization\s*:\s*)?bearer\s+[A-Za-z0-9._~+/=-]{8,}"#
+    let bearerAuthorization = #"(?i)\b(?:authorization\s*:\s*)?bearer\s+(?!do-not-display\b)[A-Za-z0-9._~+/=-]{8,}"#
     let cookieValue = #"(?i)\b(?:cookie|set-cookie)\s*[:=]\s*[^;\s]{8,}"#
     let pemHeader = "-----" + "BEGIN " + "PRIVATE " + "KEY" + "-----"
     let rules = [
