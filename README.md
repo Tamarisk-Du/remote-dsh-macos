@@ -1,4 +1,4 @@
-# Remote DSH for macOS
+# DeepSeek Harness with Remote Models for macOS
 
 <p align="center">
   <a href="#features">Features</a> ·
@@ -80,6 +80,34 @@ without taking ownership.
 
 App 负责协调 Mac 上的本地工作流，模型计算仍然留在远程服务器。如果 SSH 隧道或
 Harness 已经健康运行，它会直接连接，不会接管所有权。
+
+## Use Cases / 适用场景
+
+Useful when DeepSeek Harness and your coding project run locally on your Mac,
+while the model service runs on a remote GPU server and is reached through an
+SSH tunnel.
+
+适用于 DeepSeek Harness 和代码项目运行在 Mac 本地，而模型服务运行在远程 GPU
+服务器，并通过 SSH 隧道访问的场景。
+
+## FAQ / 常见问题
+
+**Does DeepSeek Harness run on the remote server?** No. Harness runs locally on
+your Mac.
+
+**DeepSeek Harness 会运行在远程服务器上吗？** 不会。Harness 运行在 Mac
+本地。
+
+**Are projects stored on the remote server?** No. The Finder picker selects
+projects stored locally on your Mac.
+
+**项目会存储在远程服务器上吗？** 不会。Finder 选择的是存储在 Mac 本地的项目。
+
+**Can I use a remote GPU server?** Yes. The model service only needs to be
+reachable through your configured SSH tunnel.
+
+**可以使用远程 GPU 服务器吗？** 可以。只要模型服务能够通过配置好的 SSH
+隧道访问即可。
 
 <a id="architecture"></a>
 
