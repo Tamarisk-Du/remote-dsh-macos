@@ -3,10 +3,25 @@ import Testing
 
 @Suite("DiagnosticSanitizerTests")
 struct DiagnosticSanitizerTests {
+    @Test("authorization schemes and credentials are fully redacted")
+    func authorizationSchemeAndCredentialAreRedacted() {
+        let encodedCredential = "c2Vj" + "cmV0"
+        let diagnostic = "Authorization: Basic \(encodedCredential)"
+
+        let output = DiagnosticSanitizer.clean(diagnostic)
+
+        #expect(output == "Authorization: [REDACTED]")
+        #expect(output.contains("Basic") == false)
+        #expect(output.contains(encodedCredential) == false)
+    }
+
     @Test("credential assignments and authorization headers are redacted generically")
     func credentialsAreRedacted() {
-        let diagnostic = "SERVICE_API_KEY=alpha token=beta password='gamma' Cookie=delta Authorization=epsilon Authorization: "
-            + "Bearer zeta"
+        let diagnostic = """
+        SERVICE_API_KEY=alpha token=beta password='gamma' Cookie=delta
+        Authorization=epsilon
+        Authorization: Bearer zeta
+        """
 
         let output = DiagnosticSanitizer.clean(diagnostic)
 
